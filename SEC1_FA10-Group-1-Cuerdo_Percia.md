@@ -118,8 +118,11 @@ str(data_long$Cholesterol)
 
     ##  num [1:54] 6.42 5.83 5.75 6.76 6.2 6.13 6.56 5.83 5.71 4.8 ...
 
-Since it is shown that Cholesterol is numeric, *assumption 1 was
-achieved.*
+The dataset included cholesterol levels of participants measured across three time points: **Before**, **After 4 Weeks**, **After 8 Weeks**, with two treatment groups (**Margarine A** and **Margarine B**). Table 1 summarizes the means and standard deviations for each group at each time point.
+
+The dependent variable (*cholesterol levels*) was measured on a continuous scale, with the range as numeric.
+
+*Assumption 1 was achieved*.
 
 ``` r
 table(data_long$Margarine)
@@ -129,8 +132,9 @@ table(data_long$Margarine)
     ##  A  B 
     ## 24 30
 
-Since Margarine has categorical variables A and B, *assumption 2 was
-achieved*
+The independent variables consist of between-subject factors. The between-subjects factor, *Margarine*, consists of two categorical levels: **Margarine A** (n = 24) and **Margarine B** (n = 30), as confirmed by the frequency table above. 
+
+*Assumption 2 was achieved*.
 
 ``` r
 levels(data_long$Time)
@@ -138,8 +142,9 @@ levels(data_long$Time)
 
     ## [1] "Before"      "After4weeks" "After8weeks"
 
-Since Time has a categorical level with three levels, *Assumption 3 was
-achieved*
+The independent variables consist of within-subject factors. The within-subjects factor, *Time*, consists of three repeated measures: **Before**, **After 4 Weeks**, **After 8 Weeks**.
+
+*Assumption 3 was achieved*
 
 Checking for Outliers:
 
@@ -150,8 +155,9 @@ boxplot(ID ~ Margarine * Time, data = data_long,
 
 ![](SEC1_FA10-Group-1-Cuerdo_Percia_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-From the given dataset, it seems that there are no outliers after
-reshaping the data. Thus, *Assumption 4 was achieved.*
+The boxplot above shows no significant outliers in cholesterol levels across the groups. This indicates that the data distribution for each group is consistent and not unduly influence by extreme values.
+
+*Assumption 4 was achieved.*
 
 ``` r
 by(data_long$Cholesterol, list(data_long$Time, data_long$Margarine), shapiro.test)
@@ -210,7 +216,11 @@ by(data_long$Cholesterol, list(data_long$Time, data_long$Margarine), shapiro.tes
     ## data:  dd[x, ]
     ## W = 0.89941, p-value = 0.2159
 
-Since all p values are greater than 0.05, *assumption 5 was achieved.*
+Assessing the normality of cholesterol levels, through Shapiro-Wilk test, across the combinations of the within-subjects factor (*Time*: Before, After 4 Weeks, After 8 Weeks) and the between-subject factor (*Margarine*: A, B). 
+
+All p-values were **greater than 0.05**, indicateding that the assumption of normality was met for each group.
+
+*Assumption 5 was achieved.*
 
 ``` r
 levene_test <- leveneTest(Cholesterol ~ Margarine * Time, data = data_long)
@@ -230,9 +240,13 @@ print(levene_test)
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Since the p value is less than 0.05, the assumption has been violated.
-We will, however, try to conduct a non parametric test to proceed with
-the analysis:
+Levene's Test for Homogeneity of Variance was conducted to evaluate whether the variances of cholesterol levels were equal across the combiniations of the within-subjects factor and the between-subjects factor.
+
+The test revealed a statistically significant reuslt, *F*(5, 48) = 2.67, *p* = 0.33, indicating the assumption of homogeneity of variance was violated.
+
+Since this assumption is essential for the validity of parametric tests for the two-way mixed ANOVA, the analysis cannot procced with the violation. A non-paramatric test alternative will be conducted to ensure the robustness of the findings.
+
+*Assumption 6 was NOT achieved.*.
 
 ``` r
 friedman_test <- friedman.test(Cholesterol ~ Time | ID, data = data_long)
@@ -245,21 +259,11 @@ print(friedman_test)
     ## data:  Cholesterol and Time and ID
     ## Friedman chi-squared = 29.778, df = 2, p-value = 3.419e-07
 
-``` r
-kruskal_test <- kruskal.test(Cholesterol ~ Time, data = data_long)
-print(kruskal_test)
-```
+Given the violation of the homogeneity of variance assumption, a Friendman test was conducted as a non-parametric alternative to evaluate differences in cholesterol levels across the three time points.
 
-    ## 
-    ##  Kruskal-Wallis rank sum test
-    ## 
-    ## data:  Cholesterol by Time
-    ## Kruskal-Wallis chi-squared = 2.9771, df = 2, p-value = 0.2257
+The results of the Friedman test indicated a statistically significant differencein cholesterol levels across time points, χ² (2, *N* = 54) = 29.78, *p* < .001.
 
-Since the p value is less than 0.05, this indicates that there is a
-significant difference between the time points, i.e., **Before vs. After
-4 weeks, After 4 weeks vs. After 8 weeks, and Before vs After 8 weeks.**
-Thus, *assumption 6 was still violated.*.
+*Assumption 6 was still NOT achieved.*.
 
 ``` r
 gls_model <- gls(
@@ -307,7 +311,24 @@ summary(gls_model)
     ## Residual standard error: 0.8207538 
     ## Degrees of freedom: 54 total; 48 residual
 
+Given again the violation of the homogeneity of variance assumption, a generalized least squares (GLS) model was employed to account for its observed range between data values. 
+
+The results **still** indicate no statistically significant main effects of *Margarine* or *Time*, and no significnat interaction between theese factors on cholesterol levels (*p* > .05 for all predictors).
+
+*Assumption 6 was still NOT achieved.*.
+
 Kruskal-Wallis Test
+
+``` r
+kruskal_test <- kruskal.test(Cholesterol ~ Time, data = data_long)
+print(kruskal_test)
+```
+
+    ## 
+    ##  Kruskal-Wallis rank sum test
+    ## 
+    ## data:  Cholesterol by Time
+    ## Kruskal-Wallis chi-squared = 2.9771, df = 2, p-value = 0.2257
 
 ``` r
 kruskal_test <- kruskal.test(Cholesterol ~ Margarine, data = data_long)
@@ -342,3 +363,15 @@ summary(aov_results)
     ## Residuals      45  59.07   1.313                 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+The Kruskal-Wallis test corroborated the mixed ANOVA findings, highlighitng significant difference in cholesterol levels between Margarine A and B but no significant variations over time. Additionally, no evidence of *Margarine* x *Time* ineraction was found, suggesting that the type of margarine did not diffrentially affect cholesterol levels across the three time points.
+
+## Discussion
+
+A series of statistical tests were conducted to examine the effects of margarine type (*Margarine*: A vs. B) and time (*Time*: Before, After 4 Weeks, After 8 Weeks) on cholesterol levels. The assumptions for conducting these tests were evaluated.
+
+The assumption of normality was met based on the Shapiro-Wilk test, where all combinations of *Margarine* and *Time* yielded non-significant results (all *p* > .05). This indicates that the residuals were approximately normally distributed. 
+
+However, the sixth assumption, homogeneity of variances, was assessed using Levene's test, which revealed a significant violation (*F*(5,48) = 2.67, *p* = .033). To address this, non-parametric tests and robust methods were employed. The Kruskal-Wallis test found a significant difference in cholesterol levels between margarine types (χ²(1) = 3.94, *p* = .047) but not across time points (χ²(2) = 2.98, *p* = .226). A mixed ANOVA further indicated a significant main effect of margarine type (*F*(1,45) = 4.76, *p* = .034), while the effects of time (*F*(2,45) = 0.43, *p* = .656) and the margarine-by-time interaction (*F*(2,45) = 0.03, *p* = .972) were non-significant. To confirm these findings, a generalized least squares (GLS) model was conducted, which upheld the non-significance of the interaction between margarine type and time (all *p* > .05). Collectively, these analyses highlight that while margarine type significantly affects cholesterol levels, time and the interaction between margarine and time do not have significant effects, even when adjusting for variance heterogeneity.
+
+In summary, cholesterol levels were significantly influenced by the type of margarine but not by time or the interaction between margarine type and time. These findings suggest that margarine type plays a more critical role than duration of consumption in affecting cholesterol levels, emphasizing the importance of dietary choices on health outcomes.
